@@ -16,7 +16,7 @@ class JiraEncoder(json.JSONEncoder):
     """Add support for datetime and Decimal
     """
 
-    def default(self, obj):
+    def default(self, obj): # pylint: disable=E0202
         if isinstance(obj, datetime):
             return obj.isoformat()
         if isinstance(obj, Decimal):
