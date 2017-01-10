@@ -2,8 +2,9 @@
 default: dist
 
 .PHONY: test
-test: $(wildcard **/*.py)
+test: $(wildcard **/*.py) devenv
 	find jiraexport -name '*.py' -exec python -m py_compile {} \;
+	devenv/bin/pylint jiraexport
 
 dist: $(wildcard **/*.py) setup.py | test
 	rm -rf dist

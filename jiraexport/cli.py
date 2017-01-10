@@ -1,14 +1,26 @@
-import click
-import makejson
-import mysqlalchemy
-import os
+"""Jiraexport CLI module
+
+Handy commands to help you export your JIRA issues.
+"""
+
+# Because Click makes our main() function look weird
+# pylint: disable=E1120
+# pylint: disable=R0913
+
+from __future__ import absolute_import
+from __future__ import print_function
+
 import logging
+import os
 import sys
+import click
+from . import makejson
+from . import mysqlalchemy
 
 # TODO: add a force (--force ?) flag to overwrite whatever is in a directory
 
 @click.command()
-@click.option('--format', '-f', type=click.Choice(['json', 'html', 'text']), default="text")
+@click.option('--format', '-f', type=click.Choice(['json', 'html', 'text']), default="json")
 # I'm using the same option names as what `mysql` provides
 @click.option('--user', '-u', default="root", help="MySQL username")
 @click.option('--password', '-p', prompt=True, hide_input=True, help="MySQL password", envvar="MYSQL_PWD")
@@ -43,13 +55,13 @@ def main(format, user, password, host, database, quiet, verbose, force, director
 
     logging.info("Using directory: " + directory)
 
-    all_issues = mysqlalchemy.get_all_issues(user, password, host, database)
-    # I don't feel super good about having passing this GIANT object around
-    makejson.export(all_issues, directory, force, quiet)
+    if format == "json":
+        all_issues = mysqlalchemy.get_all_issues(user, password, host, database)
+        # I don't feel super good about having passing this GIANT object around
+        makejson.export(all_issues, directory)
+    else:
+        print("The requested format "+format+" is not implemented yet.")
+
 
 if __name__ == "__main__":
     main()
-
-    # TODO: have a quiet mode. It's nice for cron jobs.
-    # TODO: write to a file. Stdout/stderr is better for info/warning/error?
-    # TODO: peek/preview mode that writes a few records to stdout. maybe even selected records.

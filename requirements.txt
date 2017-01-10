@@ -1,3 +1,4 @@
 # Dev dependencies live here.
 # Envious of npm land where all dependencies (dev & prod) live together in harmony. - NW
 twine
+pylint

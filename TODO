@@ -2,3 +2,7 @@ HTML export (with searching)
 generate a static website with client-side searching by tokenizing and pre-generating a search index right into the html.
 
 YAML? why? why not?
+
+- have a quiet mode. It's nice for cron jobs.
+- write to a file. Stdout/stderr is better for info/warning/error?
+- peek/preview mode that writes a few records to stdout. maybe even selected records.

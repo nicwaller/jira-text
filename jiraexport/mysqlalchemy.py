@@ -1,30 +1,24 @@
-import os
+"""Fetch JIRA issues from database
+
+Defines a schema using SQLalchemy
+"""
+
+from __future__ import absolute_import
+from __future__ import print_function
+
+import logging
 import sqlalchemy
-import json
-from datetime import datetime
-from decimal import Decimal
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import DeclarativeMeta
-from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
-import sys
-import logging
-import inspect
 from progressbar import ProgressBar
 
-class JiraEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        if isinstance(obj, Decimal):
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
 
 Base = declarative_base()
+
 
 class Issue(Base):
     __tablename__ = 'jiraissue'
@@ -84,6 +78,7 @@ class Issue(Base):
             serial['actions'].append(x.as_dict())
         return serial
 
+
 class JiraAction(Base):
     __tablename__ = 'jiraaction'
 
@@ -105,6 +100,7 @@ class JiraAction(Base):
         serial = {column.key: getattr(self, attr) for attr, column in self.__mapper__.c.items()}
         return serial
 
+
 class IssueStatus(Base):
     __tablename__ = 'issuestatus'
 
@@ -120,6 +116,7 @@ class IssueStatus(Base):
     def as_dict(self):
         serial = {column.key: getattr(self, attr) for attr, column in self.__mapper__.c.items()}
         return serial
+
 
 class IssueType(Base):
     __tablename__ = 'issuetype'
@@ -138,6 +135,7 @@ class IssueType(Base):
         serial = {column.key: getattr(self, attr) for attr, column in self.__mapper__.c.items()}
         return serial
 
+
 class WorkflowScheme(Base):
     __tablename__ = 'workflowscheme'
 
@@ -151,6 +149,7 @@ class WorkflowScheme(Base):
     def as_dict(self):
         serial = {column.key: getattr(self, attr) for attr, column in self.__mapper__.c.items()}
         return serial
+
 
 class Project(Base):
     __tablename__ = 'project'
@@ -172,6 +171,7 @@ class Project(Base):
         serial = {column.key: getattr(self, attr) for attr, column in self.__mapper__.c.items()}
         return serial
 
+
 class Resolution(Base):
     __tablename__ = 'resolution'
 
@@ -187,6 +187,7 @@ class Resolution(Base):
     def as_dict(self):
         serial = {column.key: getattr(self, attr) for attr, column in self.__mapper__.c.items()}
         return serial
+
 
 class Priority(Base):
     __tablename__ = 'priority'
@@ -205,6 +206,7 @@ class Priority(Base):
         serial = {column.key: getattr(self, attr) for attr, column in self.__mapper__.c.items()}
         return serial
 
+
 def get_all_issues(user, password, host="localhost", database="jira"):
     """Get all the JIRA issues from a database.
     """
@@ -219,10 +221,10 @@ def get_all_issues(user, password, host="localhost", database="jira"):
     logging.info("About to pull "+str(count)+" objects from database...")
 
     # TODO: do not show the progress bar in quiet mode
-    with ProgressBar(max_value=count) as bar:
+    with ProgressBar(max_value=count) as progressbar:
         # how sweet would be it to colorize the progress bar to show errors. (so sweet)
 
-        results=[] # TODO: can we do this in a way that is more memory-efficient?
+        results = [] # TODO: can we do this in a way that is more memory-efficient?
         completed = 0
         for issue in session.query(Issue):
             try:
@@ -230,10 +232,7 @@ def get_all_issues(user, password, host="localhost", database="jira"):
             except Exception:
                 # Do not try to attach the sqlalchemy record as extra info. There be dragons.
                 logging.error("Uncaught exception trying to process a record. Oh well. Too bad.", exc_info=True)
-                # import sys
-                # sys.exit(1) # TODO: remove this
-                pass
             finally:
                 completed = completed + 1
-                bar.update(completed)
+                progressbar.update(completed)
     return results
