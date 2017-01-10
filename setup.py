@@ -27,4 +27,15 @@ setup(
     package_data={
         'jiraexport': ['jiraexport/VERSION'],
     },
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Environment :: Console',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: MIT License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: System :: Archiving'
+      ]
 )
