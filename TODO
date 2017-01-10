@@ -1,2 +1,4 @@
 HTML export (with searching)
 generate a static website with client-side searching by tokenizing and pre-generating a search index right into the html.
+
+YAML? why? why not?
