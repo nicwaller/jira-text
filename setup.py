@@ -12,8 +12,10 @@ setup(
     description='Export issues from a JIRA database to flat files',
     url='https://github.com/nicwaller/jiraexport',
     install_requires=[
+        'click', # for making nice command-line utilities
         'sqlalchemy',
         'pymysql', # Pure native python MySQL adapter that SQLalchemy can use
+        'progressbar2',
     ],
     entry_points={
         "console_scripts": [

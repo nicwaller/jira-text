@@ -14,6 +14,7 @@ from sqlalchemy.orm import relationship
 import sys
 import logging
 import inspect
+from progressbar import ProgressBar
 
 class JiraEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -69,7 +70,8 @@ class Issue(Base):
         serial['issuestatus'] = self.issuestatus_r.as_dict()['pname']
         serial['issuetype'] = self.issuetype_r.as_dict()['pname']
         serial['project'] = self.project_r.as_dict()
-        serial['resolution'] = self.resolution_r.as_dict()['pname']
+        if self.resolution_r:
+            serial['resolution'] = self.resolution_r.as_dict()['pname']
         serial['priority'] = {
             'pname': self.priority_r.as_dict()['pname'],
             'status_color': self.priority_r.as_dict()['STATUS_COLOR'],
@@ -203,34 +205,35 @@ class Priority(Base):
         serial = {column.key: getattr(self, attr) for attr, column in self.__mapper__.c.items()}
         return serial
 
-def main():
-    user = os.environ.get('DB_USER', 'root')
-    password = os.environ['DB_PASSWORD']
-    host = os.environ.get('DB_HOST', 'localhost')
-    database = os.environ.get('DB_NAME', 'jira')
-
-    # TODO: have a quiet mode. It's nice for cron jobs.
-    # TODO: write to a file. Stdout/stderr is better for info/warning/error?
+def get_all_issues(user, password, host="localhost", database="jira"):
+    """Get all the JIRA issues from a database.
+    """
 
     connstr = 'mysql+pymysql://'+user+':'+password+'@'+host+'/'+database
-    # print(connstr) # TODO: remove debug
     engine = sqlalchemy.create_engine(connstr, echo=False)
-    engine.connect()
+    engine.connect() # TODO: can this be removed?
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    for issue in session.query(Issue):
-        # print(issue)
-        try:
-            print(json.dumps(issue.as_dict(), cls=JiraEncoder))
-        except Exception:
-            # TODO: enable this error, it is a good one
-            # logging.error("Uncaught exception trying to process a record. Oh well. Too bad.")
-            pass
+    count = session.query(Issue).count()
+    logging.info("About to pull "+str(count)+" objects from database...")
 
+    # TODO: do not show the progress bar in quiet mode
+    with ProgressBar(max_value=count) as bar:
+        # how sweet would be it to colorize the progress bar to show errors. (so sweet)
 
-
-    # print(json.dumps(issues))
-
-if __name__ == "__main__":
-    main()
+        results=[] # TODO: can we do this in a way that is more memory-efficient?
+        completed = 0
+        for issue in session.query(Issue):
+            try:
+                results.append(issue.as_dict())
+            except Exception:
+                # Do not try to attach the sqlalchemy record as extra info. There be dragons.
+                logging.error("Uncaught exception trying to process a record. Oh well. Too bad.", exc_info=True)
+                # import sys
+                # sys.exit(1) # TODO: remove this
+                pass
+            finally:
+                completed = completed + 1
+                bar.update(completed)
+    return results
