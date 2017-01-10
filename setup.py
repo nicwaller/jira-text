@@ -19,7 +19,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "jiraexport=jiraexport.jiraexport:main",
+            "jiraexport=jiraexport.cli:main",
         ]
     },
     packages=find_packages(),
