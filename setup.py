@@ -14,7 +14,6 @@ setup(
     install_requires=[
         'sqlalchemy',
         'pymysql', # Pure native python MySQL adapter that SQLalchemy can use
-        # 'mysql-connector', # I guess we don't need this any more
     ],
     entry_points={
         "console_scripts": [
