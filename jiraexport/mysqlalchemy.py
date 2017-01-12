@@ -227,7 +227,8 @@ def get_all_issues(user, password, host="localhost", database="jira"):
 
     connstr = 'mysql+pymysql://'+user+':'+password+'@'+host+'/'+database
     engine = sqlalchemy.create_engine(connstr, echo=False)
-    engine.connect() # TODO: can this be removed?
+    connection = engine.connect()
+    connection.execution_options(stream_results=True)
     Session = sessionmaker(bind=engine)
     session = Session()
 
