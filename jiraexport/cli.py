@@ -56,9 +56,10 @@ def main(format, user, password, host, database, quiet, verbose, force, director
     logging.info("Using directory: " + directory)
 
     if format == "json":
-        all_issues = mysqlalchemy.get_all_issues(user, password, host, database)
+        issue_count = mysqlalchemy.count_all_issues(user, password, host, database)
+        issue_generator = mysqlalchemy.get_all_issues(user, password, host, database)
         # I don't feel super good about having passing this GIANT object around
-        makejson.export(all_issues, directory)
+        makejson.export(issue_count, issue_generator, directory)
     else:
         print("The requested format "+format+" is not implemented yet.")
 

@@ -24,15 +24,14 @@ class JiraEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def export(all_issues, directory):
+def export(issue_count, issue_generator, directory):
     """Save all the issues to directory
     """
 
     # TODO: how do we make a `with` block conditional in order to respect quiet mode?
-    logging.info("Writing "+str(len(all_issues))+" JSON files to disk")
-    with ProgressBar(max_value=len(all_issues)) as progressbar:
-        index = 0
-        for index, issue in enumerate(all_issues):
+    logging.info("Writing "+str(issue_count)+" JSON files to disk")
+    with ProgressBar(max_value=issue_count) as progressbar:
+        for index, issue in enumerate(issue_generator):
             progressbar.update(index)
             pkey = issue['pkey'] # eg. UA-451
             filename = pkey + ".json"

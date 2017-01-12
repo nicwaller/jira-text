@@ -207,6 +207,20 @@ class Priority(Base):
         return serial
 
 
+def count_all_issues(user, password, host='localhost', database='jira'):
+    '''Count JIRA issues in the database
+
+    I introduced this so that get_all_issues could use yield and return a
+    generator, but this code is pretty clumsy too. :(
+    '''
+    connstr = 'mysql+pymysql://'+user+':'+password+'@'+host+'/'+database
+    engine = sqlalchemy.create_engine(connstr, echo=False)
+    engine.connect() # TODO: can this be removed?
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    return session.query(Issue).count()
+
 def get_all_issues(user, password, host="localhost", database="jira"):
     """Get all the JIRA issues from a database.
     """
@@ -217,22 +231,10 @@ def get_all_issues(user, password, host="localhost", database="jira"):
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    count = session.query(Issue).count()
-    logging.info("About to pull "+str(count)+" objects from database...")
-
-    # TODO: do not show the progress bar in quiet mode
-    with ProgressBar(max_value=count) as progressbar:
-        # how sweet would be it to colorize the progress bar to show errors. (so sweet)
-
-        results = [] # TODO: can we do this in a way that is more memory-efficient?
-        completed = 0
-        for issue in session.query(Issue):
-            try:
-                results.append(issue.as_dict())
-            except Exception:
-                # Do not try to attach the sqlalchemy record as extra info. There be dragons.
-                logging.error("Uncaught exception trying to process a record. Oh well. Too bad.", exc_info=True)
-            finally:
-                completed = completed + 1
-                progressbar.update(completed)
-    return results
+    # logging.info("About to pull "+str(count)+" objects from database...")
+    for issue in session.query(Issue):
+        try:
+            yield issue.as_dict()
+        except Exception:
+            # Do not try to attach the sqlalchemy record as extra info. There be dragons.
+            logging.error("Uncaught exception trying to process a record. Oh well. Too bad.", exc_info=True)
