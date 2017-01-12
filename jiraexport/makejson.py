@@ -32,8 +32,7 @@ def export(all_issues, directory):
     logging.info("Writing "+str(len(all_issues))+" JSON files to disk")
     with ProgressBar(max_value=len(all_issues)) as progressbar:
         index = 0
-        for issue in all_issues:
-            index = index + 1 # TODO: what is the pythonic way to get my index
+        for index, issue in enumerate(all_issues):
             progressbar.update(index)
             pkey = issue['pkey'] # eg. UA-451
             filename = pkey + ".json"
