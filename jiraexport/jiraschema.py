@@ -1,49 +1,50 @@
-"""Fetch JIRA issues from database
+"""Define schema of the JIRA database
 
-Defines a schema using SQLalchemy
+At least the parts we care about.
 """
+
+# We don't need "missing docstring" because this is very simple code
+# pylint: disable=C0111
+
+# And a schema definition will always have "too few public methods"
+# pylint: disable=R0903
 
 from __future__ import absolute_import
 from __future__ import print_function
 
-import logging
-import sqlalchemy
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.mysql import LONGTEXT
-from sqlalchemy import ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from progressbar import ProgressBar
+from sqlalchemy.dialects.mysql import LONGTEXT
+from sqlalchemy.ext.declarative import declarative_base
 
 
-Base = declarative_base()
+DeclarativeBase = declarative_base()
 
 
-class Issue(Base):
+class Issue(DeclarativeBase):
     __tablename__ = 'jiraissue'
     issueid = Column('ID', Integer, primary_key=True)
-    issuestatus = Column(Integer, ForeignKey('issuestatus.ID')) # never NULL
-    component = Column("COMPONENT", String) # always NULL
-    environment = Column("ENVIRONMENT", String) # mostly NULL
-    fixfor = Column("FIXFOR", String) # always NULL
-    created = Column("CREATED", DateTime) # never NULL
-    priority = Column("PRIORITY", Integer, ForeignKey('priority.ID')) # never NULL
-    security = Column("SECURITY", Integer) # always NULL
-    resolution = Column("RESOLUTION", Integer, ForeignKey('resolution.ID')) # Never NULL. Surprisingly.
-    time_estimate = Column("TIMEESTIMATE", String) # Almost always NULL
+    issuestatus = Column(Integer, ForeignKey('issuestatus.ID'))  # never NULL
+    component = Column("COMPONENT", String)  # always NULL
+    environment = Column("ENVIRONMENT", String)  # mostly NULL
+    fixfor = Column("FIXFOR", String)  # always NULL
+    created = Column("CREATED", DateTime)  # never NULL
+    priority = Column("PRIORITY", Integer, ForeignKey('priority.ID'))  # never NULL
+    security = Column("SECURITY", Integer)  # always NULL
+    resolution = Column("RESOLUTION", Integer, ForeignKey('resolution.ID'))  # Never NULL. Surprisingly.
+    time_estimate = Column("TIMEESTIMATE", String)  # Almost always NULL
     pkey = Column(String)
-    votes = Column("VOTES", Integer) # never NULL, always zero
-    reporter = Column("REPORTER", String) # never NULL (wow)
-    summary = Column("SUMMARY", String) # never NULL
-    project = Column("PROJECT", Integer, ForeignKey('project.ID')) # never NULL
-    assignee = Column("ASSIGNEE", String) # occasionally NULL
+    votes = Column("VOTES", Integer)  # never NULL, always zero
+    reporter = Column("REPORTER", String)  # never NULL (wow)
+    summary = Column("SUMMARY", String)  # never NULL
+    project = Column("PROJECT", Integer, ForeignKey('project.ID'))  # never NULL
+    assignee = Column("ASSIGNEE", String)  # occasionally NULL
     workflow_id = Column("WORKFLOW_ID", Integer, ForeignKey('workflowscheme.ID'))
-    time_spent = Column("TIMESPENT", String) # almost always NULL
-    timeoriginalestimate = Column("TIMEORIGINALESTIMATE", String) # almost always NULL
-    duedate = Column("DUEDATE", DateTime) # very commonly NULL
+    time_spent = Column("TIMESPENT", String)  # almost always NULL
+    timeoriginalestimate = Column("TIMEORIGINALESTIMATE", String)  # almost always NULL
+    duedate = Column("DUEDATE", DateTime)  # very commonly NULL
     updated = Column("UPDATED", DateTime)
-    description = Column("DESCRIPTION", String) # commonly NULL
+    description = Column("DESCRIPTION", String)  # commonly NULL
     resolutiondate = Column("RESOLUTIONDATE", DateTime)
     issuetype = Column("issuetype", Integer, ForeignKey('issuetype.ID'))
 
@@ -79,7 +80,7 @@ class Issue(Base):
         return serial
 
 
-class JiraAction(Base):
+class JiraAction(DeclarativeBase):
     __tablename__ = 'jiraaction'
 
     id = Column('ID', Integer, primary_key=True)
@@ -93,7 +94,7 @@ class JiraAction(Base):
     created = Column("CREATED", DateTime)
     updateauthor = Column("UPDATEAUTHOR", String)
     updated = Column("UPDATED", DateTime)
-    actionnum = Column(Integer) # TODO: or Decimal?
+    actionnum = Column(Integer)  # TODO: or Decimal?
 
     # play nice with JSON serialization
     def as_dict(self):
@@ -101,13 +102,13 @@ class JiraAction(Base):
         return serial
 
 
-class IssueStatus(Base):
+class IssueStatus(DeclarativeBase):
     __tablename__ = 'issuestatus'
 
     id = Column('ID', Integer, primary_key=True)
     sequence = Column('SEQUENCE', Integer)
     pname = Column(String)
-    description = Column('DESCRIPTION', String) # TODO: actually Text, not VARCHAR
+    description = Column('DESCRIPTION', String)  # TODO: actually Text, not VARCHAR
     iconurl = Column('ICONURL', String)
 
     issue = relationship("Issue", back_populates="issuestatus_r")
@@ -118,7 +119,7 @@ class IssueStatus(Base):
         return serial
 
 
-class IssueType(Base):
+class IssueType(DeclarativeBase):
     __tablename__ = 'issuetype'
 
     id = Column('ID', Integer, primary_key=True)
@@ -136,7 +137,7 @@ class IssueType(Base):
         return serial
 
 
-class WorkflowScheme(Base):
+class WorkflowScheme(DeclarativeBase):
     __tablename__ = 'workflowscheme'
 
     id = Column('ID', Integer, primary_key=True)
@@ -151,7 +152,7 @@ class WorkflowScheme(Base):
         return serial
 
 
-class Project(Base):
+class Project(DeclarativeBase):
     __tablename__ = 'project'
 
     id = Column('ID', Integer, primary_key=True)
@@ -172,7 +173,7 @@ class Project(Base):
         return serial
 
 
-class Resolution(Base):
+class Resolution(DeclarativeBase):
     __tablename__ = 'resolution'
 
     id = Column('ID', Integer, primary_key=True)
@@ -189,7 +190,7 @@ class Resolution(Base):
         return serial
 
 
-class Priority(Base):
+class Priority(DeclarativeBase):
     __tablename__ = 'priority'
 
     id = Column('ID', Integer, primary_key=True)
@@ -205,37 +206,3 @@ class Priority(Base):
     def as_dict(self):
         serial = {column.key: getattr(self, attr) for attr, column in self.__mapper__.c.items()}
         return serial
-
-
-def count_all_issues(user, password, host='localhost', database='jira'):
-    '''Count JIRA issues in the database
-
-    I introduced this so that get_all_issues could use yield and return a
-    generator, but this code is pretty clumsy too. :(
-    '''
-    connstr = 'mysql+pymysql://'+user+':'+password+'@'+host+'/'+database
-    engine = sqlalchemy.create_engine(connstr, echo=False)
-    engine.connect() # TODO: can this be removed?
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    return session.query(Issue).count()
-
-def get_all_issues(user, password, host="localhost", database="jira"):
-    """Get all the JIRA issues from a database.
-    """
-
-    connstr = 'mysql+pymysql://'+user+':'+password+'@'+host+'/'+database
-    engine = sqlalchemy.create_engine(connstr, echo=False)
-    connection = engine.connect()
-    connection.execution_options(stream_results=True)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    # logging.info("About to pull "+str(count)+" objects from database...")
-    for issue in session.query(Issue):
-        try:
-            yield issue.as_dict()
-        except Exception:
-            # Do not try to attach the sqlalchemy record as extra info. There be dragons.
-            logging.error("Uncaught exception trying to process a record. Oh well. Too bad.", exc_info=True)

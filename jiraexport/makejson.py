@@ -16,7 +16,7 @@ class JiraEncoder(json.JSONEncoder):
     """Add support for datetime and Decimal
     """
 
-    def default(self, obj): # pylint: disable=E0202
+    def default(self, obj):  # pylint: disable=E0202
         if isinstance(obj, datetime):
             return obj.isoformat()
         if isinstance(obj, Decimal):
@@ -29,18 +29,13 @@ def export(issue_count, issue_generator, directory):
     """
 
     # TODO: how do we make a `with` block conditional in order to respect quiet mode?
-    logging.info("Writing "+str(issue_count)+" JSON files to disk")
+    logging.info('Writing {} JSON files to disk'.format(issue_count))
     with ProgressBar(max_value=issue_count) as progressbar:
         for index, issue in enumerate(issue_generator):
             progressbar.update(index)
-            pkey = issue['pkey'] # eg. UA-451
+            pkey = issue['pkey']  # eg. UA-451
             filename = pkey + ".json"
             outfile = os.path.join(directory, filename)
 
             with open(outfile, 'w') as outfile:
-                try:
-                    outfile.write(json.dumps(issue, cls=JiraEncoder))
-                except UnicodeDecodeError:
-                    # How do I make output work nicely with the progress bar?
-                    # logging.error("augh, unicode decode errors")
-                    pass
+                outfile.write(json.dumps(issue, cls=JiraEncoder))
