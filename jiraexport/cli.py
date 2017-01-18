@@ -15,6 +15,7 @@ import os
 import sys
 import click
 from . import makejson
+from . import maketxt
 from . import issuestream
 from .logger import logger, setup_logging
 import sqlalchemy
@@ -59,15 +60,17 @@ def main(format, user, password, host, database, quiet, verbose, force, director
 
     logger.info('Using directory: ' + directory)
 
-    if format == 'json':
-        try:
-            issues = issuestream.get_issues(user, password, host, database)
-        except sqlalchemy.exc.OperationalError:
-            print('Connection failed. Maybe you provided the wrong password?')
-            sys.exit(1)
+    try:
+        issues = issuestream.get_issues(user, password, host, database)
+    except sqlalchemy.exc.OperationalError:
+        print('Connection failed. Maybe you provided the wrong password?')
+        sys.exit(1)
+    count = issues.next()
 
-        count = issues.next()
+    if format == 'json':
         makejson.export(count, issues, directory)
+    elif format == 'text':
+        maketxt.export(count, issues, directory)
     else:
         print('The requested format ' + format + ' is not implemented yet.')
 
